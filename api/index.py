@@ -1,4 +1,4 @@
-﻿# Vercel Serverless — Financial Stock & News API
+# Vercel Serverless — Financial Stock & News API
 # Single file, no threading, no global session, Vercel-compatible.
 
 import json, time, re, os
