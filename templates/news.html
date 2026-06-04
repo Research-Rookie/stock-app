@@ -1,0 +1,490 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QVeris News — Financial News & Sentiment</title>
+    <style>
+        :root {
+            --bg-deep: #05080f;
+            --bg-card: #0a0f1a;
+            --bg-elevated: #0e1525;
+            --border: #1a2540;
+            --border-glow: #284078;
+            --accent: #00d4ff;
+            --accent-dim: #0088aa;
+            --green: #00ff88;
+            --red: #ff4466;
+            --yellow: #ffb347;
+            --text: #d0d8e8;
+            --text-dim: #667a9e;
+            --glow-cyan: 0 0 20px rgba(0,212,255,0.3);
+            --glow-green: 0 0 20px rgba(0,255,136,0.3);
+            --glow-red: 0 0 20px rgba(255,68,102,0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "SF Mono", "JetBrains Mono", "Fira Code", "Consolas", monospace;
+            background: var(--bg-deep);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: "";
+            position: fixed; inset: 0; z-index: 0;
+            background:
+                linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridPan 20s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes gridPan {
+            0% { background-position: 0 0, 0 0; }
+            100% { background-position: 60px 60px, -60px 60px; }
+        }
+        body::after {
+            content: "";
+            position: fixed; inset: 0; z-index: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+            pointer-events: none;
+        }
+        .container { position: relative; z-index: 1; max-width: 940px; margin: 0 auto; padding: 24px 20px 40px; }
+
+        /* ── Brand Bar ── */
+        .brand-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 24px; margin-bottom: 20px;
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            flex-wrap: wrap; gap: 12px;
+        }
+        .brand-logo {
+            display: flex; align-items: center; gap: 12px; text-decoration: none;
+        }
+        .brand-logo svg { width: 38px; height: 38px; }
+        .brand-name {
+            font-size: 22px; font-weight: 800; letter-spacing: 1px;
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .brand-tagline {
+            color: var(--text-dim); font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+        }
+        .powered-by {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2);
+            border-radius: 8px; font-size: 12px; color: var(--accent);
+            text-decoration: none; transition: all 0.3s;
+        }
+        .powered-by:hover {
+            background: rgba(0,212,255,0.15); border-color: var(--accent); box-shadow: var(--glow-cyan);
+        }
+        .powered-by svg { width: 16px; height: 16px; }
+
+        /* ── Nav Tabs ── */
+        .nav-tabs {
+            display: flex; gap: 4px; margin-bottom: 24px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 4px;
+        }
+        .nav-tab {
+            flex: 1; padding: 10px 20px; text-align: center;
+            border-radius: 9px; color: var(--text-dim);
+            text-decoration: none; font-size: 14px; font-weight: 600;
+            letter-spacing: 0.5px; transition: all 0.2s;
+        }
+        .nav-tab:hover { color: var(--text); background: rgba(0,212,255,0.05); }
+        .nav-tab.active {
+            background: rgba(0,212,255,0.12); color: var(--accent);
+            box-shadow: 0 0 12px rgba(0,212,255,0.15);
+        }
+
+        /* ── Hero ── */
+        .hero { text-align: center; margin-bottom: 28px; }
+        .hero h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+        .hero h1 .gradient-text {
+            background: linear-gradient(135deg, #00d4ff 0%, #ffb347 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .hero p { color: var(--text-dim); font-size: 13px; letter-spacing: 0.5px; }
+
+        /* ── Search ── */
+        .search-box { position: relative; margin-bottom: 24px; }
+        .search-box input {
+            width: 100%; padding: 16px 24px; font-size: 16px; font-family: inherit;
+            background: var(--bg-card); border: 2px solid var(--border); border-radius: 14px;
+            color: var(--text); outline: none; transition: all 0.3s; letter-spacing: 1px;
+        }
+        .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 30px rgba(0,212,255,0.12), inset 0 0 30px rgba(0,212,255,0.03); }
+        .search-box input::placeholder { color: var(--text-dim); }
+        .search-icon { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 20px; pointer-events: none; }
+        .suggestions {
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            z-index: 100; display: none; max-height: 220px; overflow-y: auto;
+        }
+        .suggestions.active { display: block; }
+        .suggestion-item {
+            padding: 12px 20px; cursor: pointer; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .suggestion-item:hover { background: rgba(0,212,255,0.08); }
+        .suggestion-item .sym { font-weight: 700; color: var(--accent); font-size: 15px; }
+        .suggestion-item .info { color: var(--text-dim); font-size: 12px; }
+
+        /* ── Quick picks ── */
+        .quick-picks { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+        .quick-pick {
+            padding: 7px 16px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 20px; color: var(--accent); cursor: pointer; font-size: 12px;
+            font-family: inherit; letter-spacing: 0.5px; transition: all 0.2s;
+        }
+        .quick-pick:hover { border-color: var(--accent); box-shadow: var(--glow-cyan); background: rgba(0,212,255,0.06); }
+
+        /* ── Error / Loading ── */
+        .error-msg { color: var(--red); text-align: center; padding: 40px; display: none; font-size: 14px; }
+        .error-msg.active { display: block; }
+        .loading { text-align: center; padding: 50px; color: var(--text-dim); display: none; }
+        .loading.active { display: block; }
+        .loading .spinner {
+            width: 36px; height: 36px; border: 3px solid var(--border);
+            border-top-color: var(--accent); border-radius: 50%;
+            animation: spin 0.7s linear infinite; margin: 0 auto 14px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Sentiment Bar ── */
+        .sentiment-overview {
+            display: none; margin-bottom: 24px;
+        }
+        .sentiment-overview.active { display: block; }
+        .sentiment-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+        }
+        .sentiment-label {
+            font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .sentiment-label.positive { color: var(--green); }
+        .sentiment-label.negative { color: var(--red); }
+        .sentiment-label.neutral { color: var(--yellow); }
+        .sentiment-score { font-size: 28px; font-weight: 800; }
+        .sentiment-bar-wrap {
+            height: 8px; background: var(--bg-elevated); border-radius: 4px;
+            display: flex; overflow: hidden; margin-bottom: 8px;
+        }
+        .sentiment-bar-positive {
+            background: linear-gradient(90deg, #00cc66, var(--green));
+            transition: width 0.6s ease;
+        }
+        .sentiment-bar-neutral {
+            background: linear-gradient(90deg, #cc8800, var(--yellow));
+            transition: width 0.6s ease;
+        }
+        .sentiment-bar-negative {
+            background: linear-gradient(90deg, var(--red), #cc3355);
+            transition: width 0.6s ease;
+        }
+        .sentiment-counts {
+            display: flex; gap: 16px; font-size: 11px; color: var(--text-dim);
+            letter-spacing: 0.5px;
+        }
+        .sentiment-counts span b { font-size: 13px; }
+        .count-pos { color: var(--green); } .count-neg { color: var(--red); } .count-neu { color: var(--yellow); }
+
+        /* ── News Cards ── */
+        .news-list { display: none; flex-direction: column; gap: 12px; }
+        .news-list.active { display: flex; }
+        .news-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; transition: all 0.2s;
+            cursor: pointer; text-decoration: none; color: inherit;
+            display: block;
+        }
+        .news-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transform: translateY(-1px);
+        }
+        .news-card-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            gap: 12px; margin-bottom: 10px;
+        }
+        .news-title {
+            font-size: 15px; font-weight: 700; color: #e0e8f8;
+            line-height: 1.4; flex: 1;
+        }
+        .sentiment-badge {
+            padding: 4px 10px; border-radius: 20px; font-size: 10px;
+            font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+            white-space: nowrap; flex-shrink: 0;
+        }
+        .sentiment-badge.positive {
+            background: rgba(0,255,136,0.12); color: var(--green); border: 1px solid rgba(0,255,136,0.2);
+        }
+        .sentiment-badge.negative {
+            background: rgba(255,68,102,0.12); color: var(--red); border: 1px solid rgba(255,68,102,0.2);
+        }
+        .sentiment-badge.neutral {
+            background: rgba(255,179,71,0.12); color: var(--yellow); border: 1px solid rgba(255,179,71,0.2);
+        }
+        .news-summary {
+            font-size: 13px; color: var(--text-dim); line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+            overflow: hidden; margin-bottom: 8px;
+        }
+        .news-meta {
+            font-size: 11px; color: #4a6080; letter-spacing: 0.5px;
+        }
+        .news-score {
+            font-size: 11px; margin-left: 8px; opacity: 0.7;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center; margin-top: 32px; padding: 20px;
+            font-size: 12px; color: var(--text-dim); letter-spacing: 0.5px;
+        }
+        .footer a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent-dim); }
+        .footer a:hover { color: var(--green); border-color: var(--green); }
+        .footer .divider { color: var(--border); margin: 0 10px; }
+        .live-dot {
+            display: inline-block; width: 8px; height: 8px;
+            background: var(--green); border-radius: 50%; margin-right: 6px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--green); }
+            50% { opacity: 0.4; box-shadow: 0 0 2px var(--green); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Brand Bar -->
+        <div class="brand-bar">
+            <a href="https://qveris.ai" class="brand-logo" target="_blank" rel="noopener">
+                <svg viewBox="0 0 48 48" fill="none">
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0" y1="0" x2="48" y2="48">
+                            <stop offset="0%" stop-color="#00d4ff"/>
+                            <stop offset="100%" stop-color="#00ff88"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="4" y="4" width="40" height="40" rx="10" stroke="url(#logoGrad)" stroke-width="2.5" fill="none"/>
+                    <path d="M16 30 L24 12 L32 30" stroke="url(#logoGrad)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="24" cy="30" r="3" fill="url(#logoGrad)"/>
+                    <line x1="24" y1="30" x2="24" y2="38" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <div>
+                    <div class="brand-name">QVERIS</div>
+                    <div class="brand-tagline">Financial Intelligence</div>
+                </div>
+            </a>
+            <a href="https://qveris.ai" class="powered-by" target="_blank" rel="noopener">
+                <svg viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="3"/></svg>
+                Powered by QVeris.ai
+            </a>
+        </div>
+
+        <!-- Nav Tabs -->
+        <div class="nav-tabs">
+            <a href="/" class="nav-tab">📈 Stock Viewer</a>
+            <a href="/news" class="nav-tab active">📰 News & Sentiment</a>
+        </div>
+
+        <!-- Hero -->
+        <div class="hero">
+            <h1><span class="gradient-text">AI-Powered</span> Financial News</h1>
+            <p>Real-time news aggregation with sentiment analysis. Enter a ticker to get started.</p>
+        </div>
+
+        <!-- Quick Picks -->
+        <div class="quick-picks">
+            <span class="quick-pick" data-symbol="AAPL">AAPL</span>
+            <span class="quick-pick" data-symbol="MSFT">MSFT</span>
+            <span class="quick-pick" data-symbol="TSLA">TSLA</span>
+            <span class="quick-pick" data-symbol="NVDA">NVDA</span>
+            <span class="quick-pick" data-symbol="GOOGL">GOOGL</span>
+            <span class="quick-pick" data-symbol="AMZN">AMZN</span>
+            <span class="quick-pick" data-symbol="META">META</span>
+            <span class="quick-pick" data-symbol="JPM">JPM</span>
+        </div>
+
+        <!-- Search -->
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Enter ticker for news & sentiment. eg. TSLA, AAPL, NVDA..."
+                   autocomplete="off" spellcheck="false">
+            <span class="search-icon">⌕</span>
+            <div class="suggestions" id="suggestions"></div>
+        </div>
+
+        <!-- Error & Loading -->
+        <div class="error-msg" id="errorMsg"></div>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <span>Fetching latest news & analyzing sentiment...</span>
+        </div>
+
+        <!-- Sentiment Overview -->
+        <div class="sentiment-overview" id="sentimentOverview">
+            <div class="sentiment-header">
+                <span class="sentiment-label" id="sentimentLabel">NEUTRAL</span>
+                <span class="sentiment-score" id="sentimentScore">0.00</span>
+            </div>
+            <div class="sentiment-bar-wrap">
+                <div class="sentiment-bar-positive" id="barPositive" style="width:33%"></div>
+                <div class="sentiment-bar-neutral" id="barNeutral" style="width:34%"></div>
+                <div class="sentiment-bar-negative" id="barNegative" style="width:33%"></div>
+            </div>
+            <div class="sentiment-counts">
+                <span class="count-pos">🟢 Positive: <b id="countPos">0</b></span>
+                <span class="count-neu">🟡 Neutral: <b id="countNeu">0</b></span>
+                <span class="count-neg">🔴 Negative: <b id="countNeg">0</b></span>
+            </div>
+        </div>
+
+        <!-- News List -->
+        <div class="news-list" id="newsList"></div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span class="live-dot"></span> News via Yahoo Finance RSS · Sentiment by VADER
+            <span class="divider">|</span>
+            Built &amp; powered by <a href="https://qveris.ai" target="_blank" rel="noopener">QVeris.ai</a>
+            <span class="divider">|</span>
+            Free · No API key required
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById("searchInput");
+        const suggestions = document.getElementById("suggestions");
+        const errorMsg = document.getElementById("errorMsg");
+        const loading = document.getElementById("loading");
+        const newsList = document.getElementById("newsList");
+        const sentimentOverview = document.getElementById("sentimentOverview");
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add("active");
+            newsList.classList.remove("active");
+            sentimentOverview.classList.remove("active");
+            loading.classList.remove("active");
+        }
+        function hideError() { errorMsg.classList.remove("active"); }
+
+        async function fetchNews(symbol) {
+            hideError();
+            loading.classList.add("active");
+            newsList.classList.remove("active");
+            sentimentOverview.classList.remove("active");
+            try {
+                const res = await fetch("/api/news?symbol=" + encodeURIComponent(symbol));
+                const data = await res.json();
+                if (data.error) { showError(data.error); return; }
+                renderResults(data);
+            } catch (e) { showError("Network error: " + e.message); }
+        }
+
+        function renderResults(data) {
+            loading.classList.remove("active");
+
+            // Sentiment overview
+            const s = data.sentiment;
+            document.getElementById("sentimentLabel").textContent = s.label.toUpperCase();
+            document.getElementById("sentimentLabel").className = "sentiment-label " + s.label;
+            document.getElementById("sentimentScore").textContent = s.score.toFixed(2);
+            document.getElementById("sentimentScore").style.color =
+                s.label === "positive" ? "var(--green)" : s.label === "negative" ? "var(--red)" : "var(--yellow)";
+
+            const total = Math.max(s.total, 1);
+            document.getElementById("barPositive").style.width = (s.positive / total * 100).toFixed(0) + "%";
+            document.getElementById("barNeutral").style.width = (s.neutral / total * 100).toFixed(0) + "%";
+            document.getElementById("barNegative").style.width = (s.negative / total * 100).toFixed(0) + "%";
+            document.getElementById("countPos").textContent = s.positive;
+            document.getElementById("countNeu").textContent = s.neutral;
+            document.getElementById("countNeg").textContent = s.negative;
+            sentimentOverview.classList.add("active");
+
+            // News cards
+            if (!data.articles.length) {
+                newsList.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-dim)">No news articles found for this ticker.</div>';
+            } else {
+                newsList.innerHTML = data.articles.map(a => `
+                    <a href="${a.url}" target="_blank" rel="noopener" class="news-card">
+                        <div class="news-card-header">
+                            <span class="news-title">${escapeHtml(a.title)}</span>
+                            <span class="sentiment-badge ${a.sentiment}">${a.sentiment} <span class="news-score">${a.score > 0 ? '+' : ''}${a.score}</span></span>
+                        </div>
+                        ${a.summary ? `<div class="news-summary">${escapeHtml(a.summary)}</div>` : ''}
+                        <div class="news-meta">${a.published || ''}</div>
+                    </a>
+                `).join("");
+            }
+            newsList.classList.add("active");
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Search
+        let searchTimer;
+        searchInput.addEventListener("input", () => {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(async () => {
+                const q = searchInput.value.trim().toUpperCase();
+                if (q.length < 1) { suggestions.classList.remove("active"); return; }
+                try {
+                    const res = await fetch("/api/news/search?q=" + encodeURIComponent(q));
+                    const data = await res.json();
+                    if (!data.length) { suggestions.classList.remove("active"); return; }
+                    suggestions.innerHTML = data.map(d =>
+                        `<div class="suggestion-item" data-symbol="${d.symbol}"><span class="sym">${d.symbol}</span><span class="info">${d.name}</span></div>`
+                    ).join("");
+                    suggestions.classList.add("active");
+                } catch (e) {}
+            }, 250);
+        });
+        searchInput.addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                clearTimeout(searchTimer);
+                const s = searchInput.value.trim().toUpperCase();
+                if (s) { fetchNews(s); suggestions.classList.remove("active"); }
+            }
+        });
+        document.addEventListener("click", e => {
+            if (e.target.closest(".suggestion-item")) {
+                const s = e.target.closest(".suggestion-item").dataset.symbol;
+                searchInput.value = s;
+                suggestions.classList.remove("active");
+                fetchNews(s);
+            } else if (!e.target.closest(".search-box")) {
+                suggestions.classList.remove("active");
+            }
+        });
+
+        // Quick picks
+        document.querySelectorAll(".quick-pick").forEach(b => {
+            b.addEventListener("click", () => {
+                const s = b.dataset.symbol;
+                searchInput.value = s;
+                fetchNews(s);
+            });
+        });
+
+        // Keyboard shortcut
+        document.addEventListener("keydown", e => {
+            if (e.key === "/" && document.activeElement !== searchInput) {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>
